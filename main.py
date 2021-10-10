@@ -126,15 +126,32 @@ def CalcularDistanciaManhattan():
     pass
 
 
-def CalcularDistanciaHamming():
-    pass
+def CalcularDistanciaHamming(DataFrameTest,DataFrameTrainer,HeaderNamesString):
+    suma = 0
+    ListaSuma = []
+    ListaHamming = []
+
+    for test in range(len(DataFrameTest)):  # Itera cada una de las FILAS del dataframe test
+        ListaSuma = []
+        for trainer in range(len(DataFrameTrainer)):  # Itera cada una de las FILAS del dataframe test
+            for x in range(
+                    len(DataFrameTrainer[HeaderNamesString].iloc[trainer].values)):  # ITERA CADA COLUMNA DE CADA FILA
+                if DataFrameTrainer[HeaderNamesString].iloc[trainer, x] != DataFrameTest[HeaderNamesString].iloc[
+                    test, x]:  # SI LOS DATOS SON DISTINTOS SE SUMA 1
+                    suma += 1
+
+            ListaSuma.append(suma)  # SE AGREGA LA SUMA TOTAL A LA LISTA
+            suma = 0
+        ListaHamming.append(ListaSuma)
+    return ListaHamming
+
 
 
 def minmax_norm(df_input):
     return (df_input - df_input.min()) / (df_input.max() - df_input.min())
 
 
-def Normalizar(DataFrameTrainer,DataFramePrueba, HeaderNamesString, HeaderNamesNumeric, HeaderNames):
+def Normalizar(DataFrameTrainer, DataFramePrueba, HeaderNamesString, HeaderNamesNumeric, HeaderNames):
     opcion2 = 0
     opcion = int(input("\nQue tipo de Columna eligiras para target? \n 0)Numerico \n 1)Categorico\n Tu Opcion:"))
     if opcion == 1:
@@ -149,8 +166,8 @@ def Normalizar(DataFrameTrainer,DataFramePrueba, HeaderNamesString, HeaderNamesN
             print("Opcion ", count, column_names)
             count += 1
         opcion2 = int(input("\nCual es la Columna que Elijes como target: "))
-    Column_Target = HeaderNames[opcion][opcion2]                            #Se selecciona la columna Target
-    print("\n Columna Target: ",Column_Target)
+    Column_Target = HeaderNames[opcion][opcion2]  # Se selecciona la columna Target
+    print("\n Columna Target: ", Column_Target)
     DataframeNumerico = DataFrameTrainer.copy()
     DataframeNumericoPrueba = DataFramePrueba.copy()
     DataframeNumerico.drop(HeaderNamesString, axis='columns', inplace=True)
@@ -161,10 +178,11 @@ def Normalizar(DataFrameTrainer,DataFramePrueba, HeaderNamesString, HeaderNamesN
         b[Column_Target] = DataFrameTrainer[Column_Target]
         c[Column_Target] = DataFramePrueba[Column_Target]
 
-    return b,c
+    return b, c
 
 
 def KNN():
+    ListaHamming = []
     DataFrames = DividirDataFrame(df)  # SE RECIBEN LOS DATAFRAME DE DIVIDIRDATAFRAME() Y SE DIVIDEN
     DataFrameTrainer = DataFrames[0]
     DataFrameTest = DataFrames[1]
@@ -178,22 +196,43 @@ def KNN():
     # IMPRIMIMOS LOS DATAFRAME
     print("\n------------Datos de Entrenamiento------------")
     print(DataFrameTrainer.head(5).to_string())
-    print("\n",DataFrameTrainer.describe())
+    print("\n", DataFrameTrainer.describe())
     print("\n------------Datos de Prueba------------")
     print(DataFrameTest.head(5).to_string())
-                                                            #SE NORMALIZAN LOS DATAFRAMES
-    DataFrameTemp = Normalizar(DataFrameTrainer,DataFrameTest, HeaderNamesString, HeaderNamesNumeric, HeaderNames)
-    DataFrameTrainerNorm = DataFrameTemp[0]
-    DataFrameTestNorm = DataFrameTemp[1]
-    print("\n------------DATOS NORMALIZADOS--------------")
-    print(DataFrameTrainer.head(5).to_string())
-    DataFrameTrainer[list(DataFrameTrainerNorm.columns.values)] = DataFrameTrainerNorm[list(DataFrameTrainerNorm.columns.values)]
-    DataFrameTest[list(DataFrameTestNorm.columns.values)] = DataFrameTestNorm[list(DataFrameTestNorm.columns.values)]
+    if len(HeaderNamesNumeric) > 0:  # SE NORMALIZAN LOS DATAFRAMES SOLO SI CONTIENE VALORES NUMERICOS
+        DataFrameTemp = Normalizar(DataFrameTrainer, DataFrameTest, HeaderNamesString, HeaderNamesNumeric, HeaderNames)
+        DataFrameTrainerNorm = DataFrameTemp[0]
+        DataFrameTestNorm = DataFrameTemp[1]
+        print("\n------------DATOS NORMALIZADOS--------------")
+        DataFrameTrainer[list(DataFrameTrainerNorm.columns.values)] = DataFrameTrainerNorm[
+            list(DataFrameTrainerNorm.columns.values)]
+        DataFrameTest[list(DataFrameTestNorm.columns.values)] = DataFrameTestNorm[
+            list(DataFrameTestNorm.columns.values)]
+        print(DataFrameTrainer.head(5).to_string())
 
-    print(DataFrameTrainer.head(5).to_string())
+    K = int(input("Ingrese el valor de K "))
+
+    if(len(HeaderNamesString) > 0):
+        ListaHamming = CalcularDistanciaHamming(DataFrameTest, DataFrameTrainer, HeaderNamesString)
+
+
+
+
     sys.exit()
 
-    # print(minmax_norm(DataFrameTrainer[n]))
+
+''' for a in DataFrameTestList:                         #COMPARANDO PRIMERO LOS CATEGORICOS
+        for b in DataFrameTrainerList:
+            for ValoresTest in a:
+                for ValoresTrainer in b:
+                    print("\n",ValoresTrainer,ValoresTest)
+                    if ValoresTest != ValoresTrainer:
+                        suma+=1
+
+            print(suma)
+            sys.exit()'''
+
+# print(minmax_norm(DataFrameTrainer[n]))
 
 
 while True:
