@@ -13,7 +13,6 @@ from sys import *
 
 df = pd.DataFrame(pd.read_excel("./reviews_sentiment.xlsx", sheet_name=0))
 
-
 '''def KNN():
     iter = int(input("Numero de iteraciones: "))
     listSumColum = []
@@ -76,9 +75,12 @@ df = pd.DataFrame(pd.read_excel("./reviews_sentiment.xlsx", sheet_name=0))
     #os.system("PAUSE")
     #print("\n" * 100)'''
 
-def DistribucionNormal(media,desv,x):
-        total = 1/(sqrt(2*math.pi)*desv)*math.e**-(((x-media)**2)/(2*desv**2))
-        return total
+
+def DistribucionNormal(media, desv, x):
+    total = 1 / (sqrt(2 * math.pi) * desv) * math.e ** -(((x - media) ** 2) / (2 * desv ** 2))
+    return total
+
+
 def DividirDataFrame(df):
     MaxRows = df.shape[0]  # CANTIDAD MAXIMA DE FILAS DEL DATA FRAME
     CountTrainer = MaxRows * 0.7  # CANTIDAD DE FILAS DE ENTRENAMIENTO 70%
@@ -99,46 +101,99 @@ def DividirDataFrame(df):
     DataFrameTrainer = df.loc[ListTrainer]
     # CREAMOS DATAFRAME EN BASE EL INDICE DE LA LISTA DE PRUEBAS
     DataFrameTest = df.loc[ListTest]
-    print("\n---Datos de Entrenamiento---")
-    print(DataFrameTrainer.head(5).to_string())
-    print("\n---Datos de Prueba---")
-    print(DataFrameTest)
     return DataFrameTrainer, DataFrameTest
 
-def SepararStringConNumerico(DataFrameTrainer, DataFrameTest): # Divide los datos del dataframe segun el tipo de dato que sean
+
+def SepararStringConNumerico(DataFrameTrainer,
+                             DataFrameTest):  # Divide los datos del dataframe segun el tipo de dato que sean
     columns_numeric_Name = list((DataFrameTrainer.select_dtypes(include=['int64', 'float64'])).columns.values)
     columns_string_Name = list((DataFrameTrainer.select_dtypes(include=['object', 'bool'])).columns.values)
     return columns_numeric_Name, columns_string_Name
 
-def DefinirTipoDeDato(HeaderString,HeaderNumeric):
-    TipesString =df[HeaderString].dtypes
+
+def DefinirTipoDeDato(HeaderString, HeaderNumeric):
+    TipesString = df[HeaderString].dtypes
     TipesNumeric = df[HeaderNumeric].dtypes
 
-    return TipesString,TipesNumeric
+    return TipesString, TipesNumeric
+
 
 def CalcularDistanciaEuclidiana():
     pass
+
+
 def CalcularDistanciaManhattan():
     pass
+
+
 def CalcularDistanciaHamming():
     pass
-def Normalizar():
-    pass
+
+
+def minmax_norm(df_input):
+    return (df_input - df_input.min()) / (df_input.max() - df_input.min())
+
+
+def Normalizar(DataFrameTrainer,DataFramePrueba, HeaderNamesString, HeaderNamesNumeric, HeaderNames):
+    opcion2 = 0
+    opcion = int(input("\nQue tipo de Columna eligiras para target? \n 0)Numerico \n 1)Categorico\n Tu Opcion:"))
+    if opcion == 1:
+        count = 0
+        for column_names in HeaderNamesString:
+            print("Opcion ", count, column_names)
+            count += 1
+        opcion2 = int(input("\nCual es la Columna que Elijes como target: "))
+    elif opcion == 0:
+        count = 0
+        for column_names in HeaderNamesNumeric:
+            print("Opcion ", count, column_names)
+            count += 1
+        opcion2 = int(input("\nCual es la Columna que Elijes como target: "))
+    Column_Target = HeaderNames[opcion][opcion2]                            #Se selecciona la columna Target
+    print("\n Columna Target: ",Column_Target)
+    DataframeNumerico = DataFrameTrainer.copy()
+    DataframeNumericoPrueba = DataFramePrueba.copy()
+    DataframeNumerico.drop(HeaderNamesString, axis='columns', inplace=True)
+    DataframeNumericoPrueba.drop(HeaderNamesString, axis='columns', inplace=True)
+    b = minmax_norm(DataframeNumerico)
+    c = minmax_norm(DataframeNumericoPrueba)
+    if opcion == 0:  #
+        b[Column_Target] = DataFrameTrainer[Column_Target]
+        c[Column_Target] = DataFramePrueba[Column_Target]
+
+    return b,c
+
+
 def KNN():
-    DataFrames = DividirDataFrame(df)               #SE RECIBEN LOS DATAFRAME DE DIVIDIRDATAFRAME() Y SE DIVIDEN
+    DataFrames = DividirDataFrame(df)  # SE RECIBEN LOS DATAFRAME DE DIVIDIRDATAFRAME() Y SE DIVIDEN
     DataFrameTrainer = DataFrames[0]
     DataFrameTest = DataFrames[1]
     HeaderNames = SepararStringConNumerico(DataFrameTrainer, DataFrameTest)
-    HeaderNamesNumeric = HeaderNames[0]             #CONTIENE EL NOMBRE DE LAS COLUMNAS QUE SON NUMERICAS
-    HeaderNamesString = HeaderNames[1]              #CONTIENE EL NOMBRE DE LAS COLUMNAS QUE SON CATEGORICAS
-    Types =  DefinirTipoDeDato(HeaderNamesString,HeaderNamesNumeric)
-    TipesString = Types[0]                          #SE OBTIENE EL TIPO DE DATO DE CADA COLUMNA
+    HeaderNamesNumeric = HeaderNames[0]  # CONTIENE EL NOMBRE DE LAS COLUMNAS QUE SON NUMERICAS
+    HeaderNamesString = HeaderNames[1]  # CONTIENE EL NOMBRE DE LAS COLUMNAS QUE SON CATEGORICAS
+    Types = DefinirTipoDeDato(HeaderNamesString, HeaderNamesNumeric)
+    TipesString = Types[0]  # SE OBTIENE EL TIPO DE DATO DE CADA COLUMNA
     TipesNumeric = Types[1]
 
+    # IMPRIMIMOS LOS DATAFRAME
+    print("\n------------Datos de Entrenamiento------------")
+    print(DataFrameTrainer.head(5).to_string())
+    print("\n",DataFrameTrainer.describe())
+    print("\n------------Datos de Prueba------------")
+    print(DataFrameTest.head(5).to_string())
+                                                            #SE NORMALIZAN LOS DATAFRAMES
+    DataFrameTemp = Normalizar(DataFrameTrainer,DataFrameTest, HeaderNamesString, HeaderNamesNumeric, HeaderNames)
+    DataFrameTrainerNorm = DataFrameTemp[0]
+    DataFrameTestNorm = DataFrameTemp[1]
+    print("\n------------DATOS NORMALIZADOS--------------")
+    print(DataFrameTrainer.head(5).to_string())
+    DataFrameTrainer[list(DataFrameTrainerNorm.columns.values)] = DataFrameTrainerNorm[list(DataFrameTrainerNorm.columns.values)]
+    DataFrameTest[list(DataFrameTestNorm.columns.values)] = DataFrameTestNorm[list(DataFrameTestNorm.columns.values)]
 
+    print(DataFrameTrainer.head(5).to_string())
+    sys.exit()
 
-
-
+    # print(minmax_norm(DataFrameTrainer[n]))
 
 
 while True:
