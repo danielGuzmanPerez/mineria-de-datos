@@ -118,18 +118,43 @@ def DefinirTipoDeDato(HeaderString, HeaderNumeric):
     return TipesString, TipesNumeric
 
 
-def CalcularDistanciaEuclidiana():
-    pass
+def CalcularDistanciaEuclidiana(DataFrameTest, DataFrameTrainer, HeaderNamesNumeric):
+    suma = 0
+    ListaSuma = []
+    ListaEuclidiana = []
+
+    for test in range(len(DataFrameTest)):  # Itera cada una de las FILAS del dataframe test
+        ListaSuma = []
+        for trainer in range(len(DataFrameTrainer)):  # Itera cada una de las FILAS del dataframe test
+            # SE UTILIZA LA FUNCION LINALG.NORM PARA OBTENER LA DISTANCIA EUCLIDIANA
+            suma = linalg.norm(
+                DataFrameTrainer[HeaderNamesNumeric].iloc[trainer].values - DataFrameTest[HeaderNamesNumeric].iloc[
+                    test].values)
+            ListaSuma.append(suma)  # SE AGREGA LA SUMA TOTAL A LA LISTA
+            suma = 0
+        ListaEuclidiana.append(ListaSuma)
+    return ListaEuclidiana
 
 
-def CalcularDistanciaManhattan():
-    pass
+def SumarDIstancias(ListaHamming, ListaEuclidiana):
+    suma = []
+    print(ListaHamming)  # SE ITERAN LAS LISTAN PARA SUMAR SU VALOR
+    # NO IMPORTA QUE LISTA SE ITERE, AMBAS CONTIENEN LA MISMA CANTIDAD
+    for lista in range(len(ListaHamming)):
+        for posicion in range(len(ListaHamming[lista])):
+            print(lista)
+            ListaHamming[lista][posicion] = ListaHamming[lista][posicion] + ListaEuclidiana[lista][posicion]
+    return ListaHamming
 
 
-def CalcularDistanciaHamming(DataFrameTest,DataFrameTrainer,HeaderNamesString):
+def CalcularDistanciaHamming(DataFrameTest, DataFrameTrainer, HeaderNamesString):
     suma = 0
     ListaSuma = []
     ListaHamming = []
+
+    if TargetType == "clasificacion":  # SE ELIMINA LA COLUMNA TARGET PARA NO COMPARARLA
+        DataFrameTest.drop([Column_Target], axis=1)
+        DataFrameTrainer.drop([Column_Target], axis=1)
 
     for test in range(len(DataFrameTest)):  # Itera cada una de las FILAS del dataframe test
         ListaSuma = []
@@ -144,7 +169,6 @@ def CalcularDistanciaHamming(DataFrameTest,DataFrameTrainer,HeaderNamesString):
             suma = 0
         ListaHamming.append(ListaSuma)
     return ListaHamming
-
 
 
 def minmax_norm(df_input):
@@ -167,13 +191,26 @@ def Normalizar(DataFrameTrainer, DataFramePrueba, HeaderNamesString, HeaderNames
             count += 1
         opcion2 = int(input("\nCual es la Columna que Elijes como target: "))
     Column_Target = HeaderNames[opcion][opcion2]  # Se selecciona la columna Target
+    if opcion == 0:
+        TargetType = "regresion"
+    elif opcion == 1:
+        TargetType = "clasificacion"
+        print("\nObjetivo del problema: ", TargetType)
     print("\n Columna Target: ", Column_Target)
+
+    # SE CREA UNA COPIA DE AMBOS DATAFRAMES PARA NORMALIZARLOS
     DataframeNumerico = DataFrameTrainer.copy()
     DataframeNumericoPrueba = DataFramePrueba.copy()
+
+    # SE ELIMINAN LAS COLUMNAS QUE NO SE DESEAN NORMALIZAR
     DataframeNumerico.drop(HeaderNamesString, axis='columns', inplace=True)
     DataframeNumericoPrueba.drop(HeaderNamesString, axis='columns', inplace=True)
+
+    # SE NORMALIZAN LOS DATAFRAMES
     b = minmax_norm(DataframeNumerico)
     c = minmax_norm(DataframeNumericoPrueba)
+
+    # SE REMPLAZA LA COLUMNA TARGET YA QUE NO DEBE ESTAR NORMALIZADA
     if opcion == 0:  #
         b[Column_Target] = DataFrameTrainer[Column_Target]
         c[Column_Target] = DataFramePrueba[Column_Target]
@@ -183,6 +220,8 @@ def Normalizar(DataFrameTrainer, DataFramePrueba, HeaderNamesString, HeaderNames
 
 def KNN():
     ListaHamming = []
+    ListaEuclidiana = []
+    ListaSuma = []
     DataFrames = DividirDataFrame(df)  # SE RECIBEN LOS DATAFRAME DE DIVIDIRDATAFRAME() Y SE DIVIDEN
     DataFrameTrainer = DataFrames[0]
     DataFrameTest = DataFrames[1]
@@ -211,12 +250,23 @@ def KNN():
         print(DataFrameTrainer.head(5).to_string())
 
     K = int(input("Ingrese el valor de K "))
-
-    if(len(HeaderNamesString) > 0):
+    # SE OBTIENEN LAS DISTANCIAS
+    if (len(HeaderNamesString) > 0):
         ListaHamming = CalcularDistanciaHamming(DataFrameTest, DataFrameTrainer, HeaderNamesString)
+    if len(HeaderNamesNumeric) > 0:
+        ListaEuclidiana = CalcularDistanciaEuclidiana(DataFrameTest, DataFrameTrainer, HeaderNamesNumeric)
 
+        # SE SUMAN LAS DISTANCIAS EN CASO DE EXISTIR VALORES MIXTOS
+    if len(HeaderNamesString) > 0 and len(HeaderNamesNumeric) > 0:
+        ListaSuma = SumarDIstancias(ListaHamming, ListaEuclidiana)
 
+        #EN CASO QUE TODAS LAS COLUMNAS SEAN CATEGORICAS
+    elif len(HeaderNamesString) > 0:
+        ListaSuma = ListaHamming
 
+        # EN CASO QUE TODAS LAS COLUMNAS SEAN NUMERICAS
+    elif len(HeaderNamesNumeric) > 0:
+        ListaSuma = ListaEuclidiana
 
     sys.exit()
 
@@ -233,7 +283,8 @@ def KNN():
             sys.exit()'''
 
 # print(minmax_norm(DataFrameTrainer[n]))
-
+Column_Target = 0
+TargetType = 0
 
 while True:
     print("1) KNN")
