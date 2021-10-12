@@ -1,15 +1,19 @@
-import math
+#import math
 import sys, os
 
-from pandas import *
+#from pandas import *
 import pandas as pd
 from numpy import *
-import numpy as np
+#import numpy as np
 import random
-import re
-from sys import *
+#import re
+#from sys import *
 
 # ubicacion = input(str("Hola para leer tu archivo indicame la direccion y el archivo como tal y su extension: "))
+global Column_Target
+Column_Target = 0
+global TargetType
+TargetType = 0
 
 df = pd.DataFrame(pd.read_excel("./reviews_sentiment.xlsx", sheet_name=0))
 
@@ -94,8 +98,7 @@ def DividirDataFrame(df):
     return DataFrameTrainer, DataFrameTest
 
 
-def SepararStringConNumerico(DataFrameTrainer,
-                             DataFrameTest):  # Divide los datos del dataframe segun el tipo de dato que sean
+def SepararStringConNumerico(DataFrameTrainer):  # Divide los datos del dataframe segun el tipo de dato que sean
     columns_numeric_Name = list((DataFrameTrainer.select_dtypes(include=['int64', 'float64'])).columns.values)
     columns_string_Name = list((DataFrameTrainer.select_dtypes(include=['object', 'bool'])).columns.values)
     return columns_numeric_Name, columns_string_Name
@@ -128,11 +131,9 @@ def CalcularDistanciaEuclidiana(DataFrameTest, DataFrameTrainer, HeaderNamesNume
 
 def SumarDIstancias(ListaHamming, ListaEuclidiana):
     suma = []
-    print(ListaHamming)  # SE ITERAN LAS LISTAN PARA SUMAR SU VALOR
     # NO IMPORTA QUE LISTA SE ITERE, AMBAS CONTIENEN LA MISMA CANTIDAD
     for lista in range(len(ListaHamming)):
         for posicion in range(len(ListaHamming[lista])):
-            print(lista)
             ListaHamming[lista][posicion] = ListaHamming[lista][posicion] + ListaEuclidiana[lista][posicion]
     return ListaHamming
 
@@ -213,9 +214,9 @@ def KNN():
     ListaEuclidiana = []
     ListaSuma = []
     DataFrames = DividirDataFrame(df)  # SE RECIBEN LOS DATAFRAME DE DIVIDIRDATAFRAME() Y SE DIVIDEN
-    DataFrameTrainer = DataFrames[0]
-    DataFrameTest = DataFrames[1]
-    HeaderNames = SepararStringConNumerico(DataFrameTrainer, DataFrameTest)
+    DataFrameTrainer = pd.DataFrame(DataFrames[0])
+    DataFrameTest = pd.DataFrame(DataFrames[1])
+    HeaderNames = SepararStringConNumerico(DataFrameTrainer)
     HeaderNamesNumeric = HeaderNames[0]  # CONTIENE EL NOMBRE DE LAS COLUMNAS QUE SON NUMERICAS
     HeaderNamesString = HeaderNames[1]  # CONTIENE EL NOMBRE DE LAS COLUMNAS QUE SON CATEGORICAS
     Types = DefinirTipoDeDato(HeaderNamesString, HeaderNamesNumeric)
@@ -243,6 +244,7 @@ def KNN():
     # SE OBTIENEN LAS DISTANCIAS
     if (len(HeaderNamesString) > 0):
         ListaHamming = CalcularDistanciaHamming(DataFrameTest, DataFrameTrainer, HeaderNamesString)
+
     if len(HeaderNamesNumeric) > 0:
         ListaEuclidiana = CalcularDistanciaEuclidiana(DataFrameTest, DataFrameTrainer, HeaderNamesNumeric)
 
@@ -258,6 +260,13 @@ def KNN():
     elif len(HeaderNamesNumeric) > 0:
         ListaSuma = ListaEuclidiana
 
+    List = []
+    for a in range(1, int(len(DataFrameTest.index.values))):
+        DataFrameTrainer.insert(int(len(DataFrameTrainer.columns.values)), "Distancia Con Valor de Prueba "+ str(a) , ListaSuma[a])
+        List.append(DataFrameTrainer.nsmallest(K, "Distancia Con Valor de Prueba "+ str(a)))
+    print(List)
+    print(DataFrameTrainer.to_string())
+    #print(ListaSuma)
     sys.exit()
 
 
@@ -272,8 +281,6 @@ def KNN():
             sys.exit()'''
 
 # print(minmax_norm(DataFrameTrainer[n]))
-Column_Target = 0
-TargetType = 0
 
 while True:
     print("1) KNN")
